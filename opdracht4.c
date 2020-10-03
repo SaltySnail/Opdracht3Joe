@@ -37,7 +37,7 @@ Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 // AFTER a movement-key is released, reduce the movement speed for
 // every consecutive frame by (1.0 - this amount):
 #define PLAYER_DECELERATION			0.9f
-#define BULLET_LIFESPAN				200
+#define BULLET_LIFESPAN				300
 #define MUZZLE_VEL				20
 
 // A mouse structure holds mousepointer coords & a pointer texture:
@@ -75,8 +75,8 @@ typedef struct _player_ {
 	float angle;
 	int shooting;
 	playerstate state;
-	SDL_Texture *txtr_body[MAX_STATE][100];
-	SDL_Texture *txtr_feet[MAX_STATE][100]; //eerst werkte dit met 20, toen opeens segmentation fault
+	SDL_Texture *txtr_body[MAX_STATE][200];
+	SDL_Texture *txtr_feet[MAX_STATE][200]; //eerst werkte dit met 20, toen opeens segmentation fault
 } player;
 
 typedef struct _enemy_ {
@@ -291,17 +291,22 @@ int main(int argc, char *argv[])
 		// # Applying Game Logic #
 		// Also takes the mouse movement into account:
 		update_player(&blorp, &mousepointer, &keugel, &flash);
+		if (blorp.shooting)
+		{
+			blorp.shooting = 0;
+			frame = 0;
+		}
 		prev_enemy_angle = enemy.angle;
 		get_angle_enemy(&blorp, &enemy);
 		if (prev_enemy_angle != enemy.angle)
 		{
 			enemy.state = WALKING_E;
 		}
-		else
+		if (prev_enemy_angle == enemy.angle)
 		{
 			enemy.state = IDLE_E;
 		}
-		if (enemy.state)
+		if (enemy.state == WALKING_E)
 		{
 			if (prev_enemy_angle < enemy.angle)
 			{
@@ -309,71 +314,71 @@ int main(int argc, char *argv[])
 			}
 			if (prev_enemy_angle > enemy.angle)
 			{
-				blit_angled(enemy.txtr_body[enemy.state][17-(enemy_frame/3)], enemy.x, enemy.y, enemy.angle, 1);
+				blit_angled(enemy.txtr_body[enemy.state][16-(enemy_frame/3)], enemy.x, enemy.y, enemy.angle, 1);
 			}
 		}
-		else
+		if (enemy.state == IDLE_E)
 		{		
 				blit_angled(enemy.txtr_body[enemy.state][enemy_frame/3], enemy.x, enemy.y, enemy.angle, 1);
 		}
-		if (blorp.up == DOWN || blorp.down == DOWN || blorp.left == DOWN || blorp.right == DOWN)
-		{
-			if (blorp.state == SHOOTING)
-			{
-				blorp.state = SHOOTING_WHILE_WALKING;
-			}
-			else
-			{
-				blorp.state = WALKING;
+		//if (blorp.up == DOWN || blorp.down == DOWN || blorp.left == DOWN || blorp.right == DOWN)
+		//{
+		//	if (blorp.state == SHOOTING && frame == 0)
+		//	{
+		//		blorp.state = SHOOTING_WHILE_WALKING;
+		//	}
+		//	if (blorp.state == IDLE && frame == 0)
+		//	{
+		//		blorp.state = WALKING;
 				//enemy.state = WALKING_E;
-			}
-		}	
-		if (blorp.up == UP && blorp.down == UP && blorp.left == UP && blorp.right == UP)
-		{
-			if (blorp.state == SHOOTING)
-			{
-				blorp.state = SHOOTING;
-			}
-			else
-			{
-				blorp.state = IDLE;
+			//}
+		//}	
+		//if (blorp.up == UP && blorp.down == UP && blorp.left == UP && blorp.right == UP)
+		//{
+		//	if (blorp.state == SHOOTING && frame == 0)
+		//	{
+		//		blorp.state = SHOOTING;
+		//	}
+			//if (blorp.state == WALKING && frame == 0)
+			//{
+			//	blorp.state = IDLE;
 				//enemy.state = IDLE_E;
-			}
-		}
+			//}
+		//}
 		// # Actuator Output Buffering #
 		// Also takes texture rotation into account:-
 		
-		if (blorp.state) 
+		if (blorp.state == 1 || blorp.state == SHOOTING_WHILE_WALKING) 
 		{
 			blit_angled(blorp.txtr_feet[blorp.state][frame], blorp.x, blorp.y, blorp.angle, 1);
 		} 
-		else 
+		if (blorp.state == 0 || blorp.state == SHOOTING) 
 		{
 			blit_angled(blorp.txtr_feet[0][0], blorp.x, blorp.y, blorp.angle, 1);
 		}
 		if (blorp.state == SHOOTING || blorp.state == SHOOTING_WHILE_WALKING)
 		{
-			if (frame < 15)
+			if (frame < 3)
 			{
 				//printf("Gucci fam, frame = %d\n", frame);
-				blit_angled(blorp.txtr_body[blorp.state][frame/5], blorp.x, blorp.y, blorp.angle, 1);
-				flash.a = (Uint8)((255/15)*(16-frame));
+				blit_angled(blorp.txtr_body[blorp.state][frame], blorp.x, blorp.y, blorp.angle, 1);
+				flash.a = (Uint8)((255/3)*(4-frame));
 				draw_flash(&flash);
 			}
-			else
-			{
-				frame = 18;
-				if (blorp.state == SHOOTING)
+			//else
+			//{
+		//		frame = 18;
+				if (blorp.state == SHOOTING && frame == 3)
 				{
 					blorp.state = IDLE;
 				}
-				else
+				if (blorp.state == SHOOTING_WHILE_WALKING && frame == 3)
 				{
 					blorp.state = WALKING;
 				}
-			}
+		//	}
 		}
-		else
+		if (blorp.state == IDLE || blorp.state == WALKING)
 		{	
 			blit_angled(blorp.txtr_body[blorp.state][frame], blorp.x, blorp.y, blorp.angle, 1);
 		}
@@ -387,8 +392,6 @@ int main(int argc, char *argv[])
 			mousepointer.y, 1);	
 		SDL_RenderPresent(renderer);
 		SDL_Delay(16);
-		enemy_frame++;
-		++frame;
 		if (enemy_frame == 48)
 		{
 			enemy_frame = 0;
@@ -396,15 +399,17 @@ int main(int argc, char *argv[])
 		if (frame == 19)
 		{
 			frame = 0;
-			if (blorp.state == SHOOTING)
-			{
-				blorp.state = IDLE;
-			}
-			if (blorp.state == SHOOTING_WHILE_WALKING)
-			{
-				blorp.state = WALKING;
-			}
+			//if (blorp.state == SHOOTING)
+			//{
+		//		blorp.state = IDLE;
+		//	}
+		//	if (blorp.state == SHOOTING_WHILE_WALKING)
+		//	{
+		//		blorp.state = WALKING;
+		//	}
 		}
+		enemy_frame++;
+		++frame;
 
 	}
 
@@ -473,7 +478,7 @@ void process_input(player *tha_playa, mouse *tha_mouse)
 			case SDL_MOUSEBUTTONUP:
 				if (event.button.button == SDL_BUTTON_LEFT)
 				{
-						tha_playa->shooting = 0;
+						//tha_playa->shooting = 0;
 						printf("Holstering...\n");
 				}
 				break;
@@ -486,29 +491,45 @@ void process_input(player *tha_playa, mouse *tha_mouse)
 
 void update_player(player *tha_playa, mouse *tha_mouse, keugel *keugel, flash *flash)
 {
-	process_keugel(tha_playa, keugel, tha_playa->angle, tha_mouse, flash);
 	if (tha_playa->up)
 	{
 		tha_playa->y -= (int)PLAYER_MAX_SPEED;
+		if (keugel->life >= (BULLET_LIFESPAN - 3))
+		{
+			flash->y -= (int)PLAYER_MAX_SPEED;	
+		}
 		//keugel->y += (int)PLAYER_MAX_SPEED;
 	}
 	if (tha_playa->down)
 	{
 		tha_playa->y += (int)PLAYER_MAX_SPEED;
+		if (keugel->life >= (BULLET_LIFESPAN - 3))
+		{
+			flash->y += (int)PLAYER_MAX_SPEED;
+		}
 		//keugel->y -= (int)PLAYER_MAX_SPEED;
 	}
 	if (tha_playa->left)
 	{
 		tha_playa->x -= (int)PLAYER_MAX_SPEED;
+		if (keugel->life >= (BULLET_LIFESPAN - 3))
+		{
+			flash->x -= (int)PLAYER_MAX_SPEED;
+		}
 		//keugel->x += (int)PLAYER_MAX_SPEED;
 	}
 	if (tha_playa->right)
 	{
 		tha_playa->x += (int)PLAYER_MAX_SPEED;
+		if (keugel->life >= (BULLET_LIFESPAN - 3))
+		{
+			flash->x += (int)PLAYER_MAX_SPEED;
+		}
 		//keugel->x -= (int)PLAYER_MAX_SPEED;
 	}
 	tha_playa->angle = get_angle(tha_playa->x, tha_playa->y,
 		tha_mouse->x, tha_mouse->y);
+	process_keugel(tha_playa, keugel, tha_playa->angle, tha_mouse, flash);
 }
 
 void proper_shutdown(void)
@@ -616,22 +637,29 @@ void process_keugel(player *player, keugel *keugel, float angle, mouse *mouse, f
 		keugel->x = (int)(player->x + radius * cos(angle*PI/180));
 		keugel->y = (int)(player->y + radius * sin(angle*PI/180));
 		keugel->angle = (float)(360 + atan2(mouse->y - keugel->y, mouse->x - keugel->x) * (180/PI)); //blorp is magic, blorp can shoot tha bullets backwards
-		player->shooting = 0;
-		player->state = SHOOTING;
+		if (player->state == IDLE)
+		{
+			player->state = SHOOTING;
+		}
+		if (player->state == WALKING)
+		{
+			player->state = SHOOTING_WHILE_WALKING;
+		}
 		printf("graden: %.2f \n", keugel->angle);
 		flash->x = keugel->x;
 		flash->y = keugel->y;
 		flash->angle = keugel->angle;
+		flash->a = 255;	
 	}
 	if (keugel->life)
 	{
 		keugel->x += (int)keugel->speed_x;
 		keugel->y += (int)keugel->speed_y;	
 	}
-//	else
-//	{
-//		player->state = IDLE;	
-	//}
+	if (keugel->life == 0)
+	{
+		player->state = IDLE;
+	}
 		//printf("keugel bevindt zich op \n x: %d \n y: %d \n De snelheid is: \n x: %.2f \n y: %.2f \n", keugel->x, keugel->y, keugel->speed_x, keugel->speed_y);
 }
 
