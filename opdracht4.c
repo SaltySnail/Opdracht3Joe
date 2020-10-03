@@ -37,7 +37,7 @@ Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 // AFTER a movement-key is released, reduce the movement speed for
 // every consecutive frame by (1.0 - this amount):
 #define PLAYER_DECELERATION			0.9f
-#define BULLET_LIFESPAN				300
+#define BULLET_LIFESPAN				120
 #define MUZZLE_VEL				20
 
 // A mouse structure holds mousepointer coords & a pointer texture:
@@ -469,7 +469,7 @@ void process_input(player *tha_playa, mouse *tha_mouse)
 					SDL_GetMouseState(&tha_mouse->x, &tha_mouse->y);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
-				if (event.button.button == SDL_BUTTON_LEFT)
+				if (event.button.button == SDL_BUTTON_LEFT /*&& (tha_playa->state == IDLE || tha_playa->state == WALKING)*/)
 				{
 						tha_playa->shooting = 1;
 						printf("Piew piew \n");
@@ -628,7 +628,7 @@ void init_textures(char *path, char *file_prefix, int num_txtrs, SDL_Texture **t
 void process_keugel(player *player, keugel *keugel, float angle, mouse *mouse, flash *flash)
 {
 	int radius = 140;
-	if (player->shooting)
+	if (player->shooting && keugel->life == 0)
 	{
 		keugel->life = BULLET_LIFESPAN;
 		keugel->speed_x = MUZZLE_VEL*(float)(cos(angle*PI/180));
@@ -677,3 +677,4 @@ void get_angle_enemy(player *player, enemy *enemy)
 {
 	enemy->angle = (float)(360 + atan2(player->y - enemy->y, player->x - enemy->x) * (180.0 / PI));
 }
+[s
