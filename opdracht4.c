@@ -37,7 +37,7 @@ Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 // AFTER a movement-key is released, reduce the movement speed for
 // every consecutive frame by (1.0 - this amount):
 #define PLAYER_DECELERATION			0.9f
-#define BULLET_LIFESPAN				120
+#define BULLET_LIFESPAN				300
 #define MUZZLE_VEL				20
 
 // A mouse structure holds mousepointer coords & a pointer texture:
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 	// New: Mouse is a type representing a struct containing x and y
 	// coords of mouse pointer:
 	mouse mousepointer;
-	int frame, enemy_frame;
+	int frame = 0, enemy_frame;
 	unsigned int window_flags = 0;
 	unsigned int renderer_flags = SDL_RENDERER_ACCELERATED;
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -321,34 +321,33 @@ int main(int argc, char *argv[])
 		{		
 				blit_angled(enemy.txtr_body[enemy.state][enemy_frame/3], enemy.x, enemy.y, enemy.angle, 1);
 		}
-		//if (blorp.up == DOWN || blorp.down == DOWN || blorp.left == DOWN || blorp.right == DOWN)
-		//{
-		//	if (blorp.state == SHOOTING && frame == 0)
-		//	{
-		//		blorp.state = SHOOTING_WHILE_WALKING;
-		//	}
-		//	if (blorp.state == IDLE && frame == 0)
-		//	{
-		//		blorp.state = WALKING;
+		if (blorp.up == DOWN || blorp.down == DOWN || blorp.left == DOWN || blorp.right == DOWN)
+		{
+			if (blorp.state == SHOOTING)
+			{
+				blorp.state = SHOOTING_WHILE_WALKING;
+			}
+			if (blorp.state == IDLE)
+			{
+				blorp.state = WALKING;
 				//enemy.state = WALKING_E;
-			//}
-		//}	
-		//if (blorp.up == UP && blorp.down == UP && blorp.left == UP && blorp.right == UP)
-		//{
-		//	if (blorp.state == SHOOTING && frame == 0)
-		//	{
-		//		blorp.state = SHOOTING;
-		//	}
-			//if (blorp.state == WALKING && frame == 0)
-			//{
-			//	blorp.state = IDLE;
+			}
+		}	
+		if (blorp.up == UP && blorp.down == UP && blorp.left == UP && blorp.right == UP)
+		{
+			if (blorp.state == SHOOTING_WHILE_WALKING /* && frame == 0*/)
+			{
+				blorp.state = SHOOTING;
+			}
+			if (blorp.state == WALKING/* && frame == 0*/)
+			{
+				blorp.state = IDLE;
 				//enemy.state = IDLE_E;
-			//}
-		//}
+			}
+		}
 		// # Actuator Output Buffering #
 		// Also takes texture rotation into account:-
-		
-		if (blorp.state == 1 || blorp.state == SHOOTING_WHILE_WALKING) 
+		if (blorp.state == WALKING || blorp.state == SHOOTING_WHILE_WALKING) 
 		{
 			blit_angled(blorp.txtr_feet[blorp.state][frame], blorp.x, blorp.y, blorp.angle, 1);
 		} 
@@ -390,13 +389,15 @@ int main(int argc, char *argv[])
 		// New: Redraw mouse pointer centered on the mouse coordinates:
 		blit(mousepointer.txtr_reticle, mousepointer.x,
 			mousepointer.y, 1);	
+		enemy_frame++;
+		++frame;
 		SDL_RenderPresent(renderer);
 		SDL_Delay(16);
 		if (enemy_frame == 48)
 		{
 			enemy_frame = 0;
 		}	
-		if (frame == 19)
+		if (frame == 20)
 		{
 			frame = 0;
 			//if (blorp.state == SHOOTING)
@@ -408,8 +409,6 @@ int main(int argc, char *argv[])
 		//		blorp.state = WALKING;
 		//	}
 		}
-		enemy_frame++;
-		++frame;
 
 	}
 
@@ -469,7 +468,7 @@ void process_input(player *tha_playa, mouse *tha_mouse)
 					SDL_GetMouseState(&tha_mouse->x, &tha_mouse->y);
 				break;
 			case SDL_MOUSEBUTTONDOWN:
-				if (event.button.button == SDL_BUTTON_LEFT /*&& (tha_playa->state == IDLE || tha_playa->state == WALKING)*/)
+				if (event.button.button == SDL_BUTTON_LEFT)
 				{
 						tha_playa->shooting = 1;
 						printf("Piew piew \n");
@@ -628,7 +627,7 @@ void init_textures(char *path, char *file_prefix, int num_txtrs, SDL_Texture **t
 void process_keugel(player *player, keugel *keugel, float angle, mouse *mouse, flash *flash)
 {
 	int radius = 140;
-	if (player->shooting && keugel->life == 0)
+	if (player->shooting)
 	{
 		keugel->life = BULLET_LIFESPAN;
 		keugel->speed_x = MUZZLE_VEL*(float)(cos(angle*PI/180));
@@ -677,4 +676,3 @@ void get_angle_enemy(player *player, enemy *enemy)
 {
 	enemy->angle = (float)(360 + atan2(player->y - enemy->y, player->x - enemy->x) * (180.0 / PI));
 }
-[s
