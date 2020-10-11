@@ -1,6 +1,14 @@
 #include <SDL2/SDL.h>
 #include "../entities/entity.h"
 
+
+void proper_shutdown(SDL_Renderer *renderer, SDL_Window *window)
+{
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+	SDL_Quit();
+}
+
 void handle_key(SDL_KeyboardEvent *keyevent, keystate updown,
 	player *tha_playa)
 {
@@ -25,7 +33,7 @@ void handle_key(SDL_KeyboardEvent *keyevent, keystate updown,
 	}
 }
 
-void process_input(player *tha_playa, mouse *tha_mouse)
+void process_input(player *tha_playa, mouse *tha_mouse, SDL_Renderer *renderer, SDL_Window *window)
 {
 	SDL_Event event;
 	while (SDL_PollEvent(&event))
@@ -33,13 +41,13 @@ void process_input(player *tha_playa, mouse *tha_mouse)
 		switch (event.type)
 		{
 			case SDL_QUIT:
-				proper_shutdown();
+				proper_shutdown(renderer, window);
 				exit(0);
 				break;
 			case SDL_KEYDOWN:
 				if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
 				{
-					proper_shutdown();
+					proper_shutdown(renderer, window);
 					exit(0);
 				}
 				else
@@ -73,4 +81,3 @@ void process_input(player *tha_playa, mouse *tha_mouse)
 	}
 	// NEW -- Read the mouse position here
 }
-

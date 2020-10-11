@@ -39,6 +39,7 @@ Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 
 #define SCREEN_WIDTH				1920
 #define SCREEN_HEIGHT				1080
+#define FPS					144
 /*
 #define PI							3.14159265358979323846
 // Move this much pixels every frame a move is detected:
@@ -134,8 +135,9 @@ void handle_key(SDL_KeyboardEvent *keyevent, keystate updown,
 void process_input(player *tha_playa, mouse *tha_mouse);
 // This function has changed because mouse movement was added:
 void update_player(player *tha_playa, mouse *tha_mouse, keugel *keugel, flash *flash);
-*/
 void proper_shutdown(void);
+*/
+void setFps(Uint32 starting_tick);
 /*
 SDL_Texture *load_texture(char *filename);
 // This function has changed because texture rotation was added,
@@ -181,6 +183,7 @@ int main(int argc, char *argv[])
 	int frame = 0, enemy_frame;
 	unsigned int window_flags = 0;
 	unsigned int renderer_flags = SDL_RENDERER_ACCELERATED;
+	Uint32 starting_tick;
 
 	//init_renderer(renderer, window, renderer_flags, window_flags);
 
@@ -298,12 +301,13 @@ int main(int argc, char *argv[])
 
 	while (1)
 	{
+		starting_tick = SDL_GetTicks();	
 		SDL_SetRenderDrawColor(renderer, 120, 144, 156, 255);
 		SDL_RenderClear(renderer);
 
 		// # Sensor Reading #
 		// Also takes the mouse movement into account:
-		process_input(&blorp, &mousepointer);
+		process_input(&blorp, &mousepointer, renderer, window);
 
 		// # Applying Game Logic #
 		// Also takes the mouse movement into account:
@@ -409,7 +413,8 @@ int main(int argc, char *argv[])
 		enemy_frame++;
 		++frame;
 		SDL_RenderPresent(renderer);
-		SDL_Delay(16);
+		setFps(starting_tick);
+		//SDL_Delay(16);
 		if (enemy_frame == 48)
 		{
 			enemy_frame = 0;
@@ -547,12 +552,22 @@ void update_player(player *tha_playa, mouse *tha_mouse, keugel *keugel, flash *f
 		tha_mouse->x, tha_mouse->y);
 	process_keugel(tha_playa, keugel, tha_playa->angle, tha_mouse, flash);
 }
-*/
+
 void proper_shutdown(void)
 {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+}
+*/
+void setFps(Uint32 starting_tick)
+{
+    if( (1000 / FPS) > (SDL_GetTicks() - starting_tick))
+    {
+        SDL_Delay(1000/FPS - (SDL_GetTicks() - starting_tick));
+        printf ("FPS: %d\n", 1000/(SDL_GetTicks() - starting_tick));
+
+    }
 }
 /*
 SDL_Texture *load_texture(char *filename)
