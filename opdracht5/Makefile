@@ -10,7 +10,7 @@ CFLAGS := -std=c99 -Wall -Wextra -Wconversion -Wpedantic `sdl2-config --cflags -
 HDRS :=
 
 # add source files here
-SRCS := Blorpgame.c modules/blit/blit.c modules/input/input.c modules/textures/textures.c modules/update/update.c modules/renderer/renderer.c 
+SRCS := Blorpgame.c modules/blit/blit.c modules/input/input.c modules/textures/textures.c modules/update/update.c #modules/renderer/renderer.c 
 # generate names of object files
 OBJS := $(SRCS:.c=.o)
 
